@@ -205,7 +205,7 @@ var $fr = {};
    *
    */
   this.initialize = function(config) {
-    _config = config;
+    _config = config || {};
     _config.options = _config.options || [];
     
     if (_config.magicString) {
@@ -295,7 +295,7 @@ var $fr = {};
     else if (anOpt.type === 'range')
     {
       // defaults
-      anOpt.min = (anOpt.min || 1);
+      anOpt.min = (anOpt.min !== undefined) ? anOpt.min : 1;
       anOpt.max = (anOpt.max || 100);
       anOpt.step = (anOpt.step || 1);
       anOpt.unitLabel = (anOpt.unitLabel || '');
