@@ -1,5 +1,5 @@
 //
-//  Fringe.js 0.0.0.1-ultra-pre-alpha
+//  Fringe.js 0.0.0.2-super-pre-alpha
 //
 //  (c) 2011 Mark Ture <mark.ture@gmail.com>
 //  Fringe may be freely distributed under the MIT license.
@@ -10,11 +10,28 @@
 /**
  * config {}:
  *   visible: boolean - whether to display the Fringe panel
- *   options []:
- *     name
- *     labels[] 0: falseLabel, 1: trueLabel
- *     type
- *     defaultValue
+ *   magicString: string - string to type to show/activate the panel
+ *   options []: array of option definitions, defined below
+ *
+ * option {}
+ *   type (required)
+ *   name (required): alphanumeric, no spaces or punctuation (may be used in HTML IDs..)
+ *   defaultValue (required)
+ *   onActivate (optional)
+ *
+ *   -- properties for 'boolean' option
+ *   values[] (required): 0: falseLabel, 1: trueLabel
+ *
+ *   -- properties for 'multi' option
+ *   values (required): array of possible values for option
+ *
+ *   -- properties for 'range' option
+ *   min (default: 1)
+ *   max (default: 100)
+ *   step (default: 1)
+ *   unitLabel (default: <empty string>)
+ *   unitDecimals (default: 0)
+ *   
  */
 var $fr = {};
 
@@ -28,53 +45,69 @@ var $fr = {};
       _configMap = {},
       _panel = null,
       _deferredOpts = [],
-      _libProxy = null, /* handle jQuery, Prototype, and maybe YUI */
+      /*_prevKey,*/
+      _magicString = 'ff',
+      _nextMagicMatch = 0,
+      _panelIntendedVisible,
+      _fadeTimer,
+      _fadeOpacityIter = 5,  // 0 => opacity: 0, _ANIM_STEPS => opacity: 1.0
+      _ANIM_STEPS = 7,
+      _ANIM_DURATION = 90,
       _handleOptionClick, // allow function to be captured in closure for onclick handler
+      _handleKeys,
       _defStyles;
   
   _defStyles =
-    '.fringe-panel { position: fixed; top: 10px; right: 10px; width: 170px; height: 50px; z-index: 100; background-color: #444; border: 3px solid #222; padding-top: 2px; }' +
-    '.fringe-panel a:link,.fringe-panel a:hover,.fringe-panel a:visited { color: #DDD; text-decoration: none; }' +
+    '.fringe-panel { font-size: 12px; position: fixed; top: 10px; right: 10px; z-index: 100; background-color: #444; border: 3px solid #222; padding-top: 2px; }' +
+    '.fringe-panel a:link,.fringe-panel a:hover,.fringe-panel a:visited { font-size: 12px; color: #DDD; text-decoration: none; }' +
     '.fringe-panel a:hover { text-decoration: underline; }' +
-    '.fringe-panel p { margin: 8px 11px; }';
+    '.fringe-panel p { font-size: 12px; margin: 8px 11px; color: #DDD; }' +
+    '.fringe-panel p input { height: 12px; }';
   
-  _handleOptionClick = function(el, opt) {
-    opt.value = !(opt.value);
-    var labelIdx = (opt.value) ? 1 : 0;
-    //$(el).text(opt.labels[labelIdx]);
-    el.innerHTML = opt.labels[labelIdx];
+  _handleOptionClick = function(el, opt, newValue) {
+    if (opt.type === 'boolean') {
+      opt.value = !(opt.value);
+      var labelIdx = (opt.value) ? 1 : 0;
+      el.innerHTML = opt.values[labelIdx];
+    } else if (opt.type === 'multi') {
+      opt.value = newValue;
+    } else if (opt.type === 'range') {
+      opt.value = newValue;
+    }
     
     if (opt.onActivate !== undefined) {
       opt.onActivate.call(opt, opt.value);
     }
   };
   
-  if (true /* detect jQuery */)
-  {
-    _libProxy = (function() {
-      return {
-        build: function() {
-          if (arguments.length > 0) {
-            arguments[0] = '<'+arguments[0]+'/>';
-          }
-          return $.apply(null, arguments)[0];
+  _handleKeys = function(e) {
+    var char,
+        evt = (e) ? e : window.event;
+    char = (evt.charCode) ? evt.charCode : evt.keyCode;
+    if (char > 31 && char < 256) {
+      if (char === _magicString.toUpperCase().charCodeAt(_nextMagicMatch)) {
+        _nextMagicMatch++;
+        if (_nextMagicMatch === _magicString.length) {
+          _fringe.togglePanel();
+          _nextMagicMatch = 0;
         }
-      };
-    })();
-  }
-  else if (false /* detect Prototype */)
-  {
-    _libProxy = (function() {
-      return {
-        build: function() {
-          return new Element(null, arguments);
-        }
-      };
-    })();
-  }
+      }
+      else {
+        _nextMagicMatch = 0;
+      }
+      /*
+      if (_prevKey === 70 && char === 82) {
+        _prevKey = null;
+        _fringe.togglePanel();
+      } else {
+        _prevKey = char;
+      }
+      */
+    }
+  };
   
   /* Technique from YUI StyleSheet */
-  function _addStyles(cssText) {
+  function _addStylesToPage(cssText) {
     var head,
         node;
     
@@ -90,28 +123,94 @@ var $fr = {};
   }
 
   function _createPanel() {
-    var allOpts = _config.options.concat(_deferredOpts);
+    var divEl,
+        allOpts = _config.options.concat(_deferredOpts);
+    _panelIntendedVisible = (_config.visible === true);
+
+    _addStylesToPage(_defStyles);
     
     // create the container panel for the buttons!
-    _addStyles(_defStyles)
-    //_panel = _libProxy.build('div', {'class':'fringe-panel', 'style':'position:fixed; top:10px; right:10px; width:170px; height:50px; z-index: 100; background-color:#CCbC7C'});
     _panel = document.createElement('div');
     _panel.className = 'fringe-panel';
+    if (_config.visible !== true) {
+      _panel.style.display = 'none';
+      _fadeOpacityIter = 0;
+    }
+    // div for min width
+    divEl = document.createElement('div');
+    divEl.style.width = '170px';
+    divEl.style.fontSize = '1px';
+    divEl.style.lineHeight = '1';
+    divEl.innerHTML = '&nbsp;';
+    _panel.appendChild(divEl);
     document.body.appendChild(_panel);
 
     for ( var i=0; i<allOpts.length; i++ ) {
       var anOpt = allOpts[i];
       _fringe.addOption(anOpt);
     }
+    
+    // keylistener
+    document.onkeydown = function(e) {_handleKeys(e);};
+  }
+  
+  function _fadeOut() {
+    if (_fadeOpacityIter === 0) {
+      _clearTimer();
+      return;
+    }
+    _fadeOpacityIter--;
+    _setNewOpacity();
+    if (_fadeOpacityIter === 0) {
+      _clearTimer();
+      return;
+    }
+  }
+
+  function _fadeIn() {
+    if (_fadeOpacityIter === _ANIM_STEPS) {
+      _clearTimer();
+      return;
+    }
+    _fadeOpacityIter++;
+    _setNewOpacity();
+    if (_fadeOpacityIter === _ANIM_STEPS) {
+      _clearTimer();
+      return;
+    }
+  }
+  
+  function _setNewOpacity() {
+    // 0 to _ANIM_STEPS
+    _panel.style.opacity = (1.0 / _ANIM_STEPS) * _fadeOpacityIter;
+    // TODO: handle IE
+    if (_fadeOpacityIter === 0 && _panel.style.display !== 'none') {
+      _panel.style.display = 'none';
+    } else if (_fadeOpacityIter !== 0 && _panel.style.display === 'none') {
+      _panel.style.display = 'block';
+    }
+  }
+  
+  function _clearTimer() {
+    if (_fadeTimer) {
+      window.clearInterval(_fadeTimer);
+      _fadeTimer = null;
+    }
   }
   
   
   /*
+   * =====================================================================
    * PUBLIC FUNCTIONS
+   *
    */
   this.initialize = function(config) {
     _config = config;
     _config.options = _config.options || [];
+    
+    if (_config.magicString) {
+      _magicString = _config.magicString;
+    }
     
     // create (name->option) map and set value to default
     for ( var i=0; i<_config.options.length; i++ ) {
@@ -123,12 +222,26 @@ var $fr = {};
   };
   
   this.render = function() {
-    if (_config.visible === true) {
-      _createPanel();
+    _createPanel();
+  }
+  
+  this.togglePanel = function() {
+    _clearTimer();
+    _panelIntendedVisible = !_panelIntendedVisible;
+    if (_panelIntendedVisible) {
+      _fadeTimer = window.setInterval(_fadeIn, _ANIM_DURATION / _ANIM_STEPS);
+    } else {
+      _fadeTimer = window.setInterval(_fadeOut, _ANIM_DURATION / _ANIM_STEPS);
     }
+    //_panel.style.display = (_panel.style.display === 'none') ? 'block' : 'none';
   }
   
   this.addOption = function(anOpt) {
+    var btn,
+        contEl,
+        aVal,
+        anEl;
+    
     if (!anOpt._inited) {
       anOpt['value'] = anOpt.defaultValue;
       _configMap[anOpt.name] = anOpt;
@@ -138,23 +251,84 @@ var $fr = {};
       _deferredOpts.push(anOpt);
       return;
     }
-    var btn = _libProxy.build('a', {
-      'href':'#',
-      'class':'button',
-      text: anOpt.labels[((anOpt.value) ? 1 : 0)]
-    });
-    /*
-    $(btn).click({opt: anOpt}, function(event) {
-      _handleOptionClick(this, event.data.opt);
-      return false;
-    });*/
-    btn.onclick = function(event) {
-      _handleOptionClick(this, anOpt);
-      return false;
-    };
-    var cont = document.createElement('p');
-    cont.appendChild(btn);
-    _panel.appendChild(cont);
+    
+    contEl = document.createElement('p');
+    
+    if (anOpt.type === 'boolean')
+    {
+      btn = document.createElement('a');
+      btn.href = '#';
+      btn.className = 'button';
+      btn.innerHTML = anOpt.values[((anOpt.value) ? 1 : 0)];
+      btn.onclick = function(event) {
+        _handleOptionClick(this, anOpt);
+        return false;
+      };
+      contEl.appendChild(btn);
+    }
+    else if (anOpt.type === 'multi')
+    {
+      contEl.innerHTML = anOpt.name + ':&nbsp;';
+      for ( var i=0; i<anOpt.values.length; i++ ) {
+        aVal = anOpt.values[i];
+        anEl = document.createElement('input');
+        anEl.type = 'radio';
+        anEl.name = 'FRG__RAD__' + anOpt.name;
+        anEl.value = aVal;
+        anEl.id = 'FRG__RAD__ID__' + aVal;
+        if (anOpt.value == aVal) {
+          anEl.checked = true;
+        }
+        anEl.onclick = function(event) {
+          _handleOptionClick(this, anOpt, this.value);
+          //return false;
+        };
+        contEl.appendChild(anEl);
+        
+        anEl = document.createElement('label');
+        anEl.htmlFor = 'FRG__RAD__ID__' + aVal;
+        anEl.innerHTML = aVal;
+        contEl.appendChild(anEl);
+        contEl.appendChild(document.createTextNode(' '));
+      }
+    }
+    else if (anOpt.type === 'range')
+    {
+      // defaults
+      anOpt.min = (anOpt.min || 1);
+      anOpt.max = (anOpt.max || 100);
+      anOpt.step = (anOpt.step || 1);
+      anOpt.unitLabel = (anOpt.unitLabel || '');
+      anOpt.unitDecimals = (anOpt.unitDecimals || 0);
+
+      contEl.innerHTML = anOpt.name + ':&nbsp;';
+      anEl = document.createElement('span');
+      anEl.id = 'FRG__CURVAL__ID__' + anOpt.name;
+      anEl.innerHTML = anOpt.value.toFixed(anOpt.unitDecimals) + anOpt.unitLabel;
+      contEl.appendChild(anEl);
+      anEl = document.createElement('div');
+      anEl.id = 'FRG__SLIDER__ID__' + anOpt.name;
+      anEl.style.width = '120px';
+      anEl.style.display = 'inline-block';
+      anEl.style.marginLeft = '7px';
+      contEl.appendChild(anEl);
+    }
+
+    _panel.appendChild(contEl);
+
+    // do any post-append actions that require elements to be attached to DOM
+    if (anOpt.type === 'range') {
+      $('#FRG__SLIDER__ID__' + anOpt.name).slider({
+        value: anOpt.value,
+        min: anOpt.min,
+        max: anOpt.max,
+        step: anOpt.step,
+        slide: function( event, ui ) {
+          document.getElementById('FRG__CURVAL__ID__' + anOpt.name).innerHTML = ui.value.toFixed(anOpt.unitDecimals) + anOpt.unitLabel;
+          _handleOptionClick(this, anOpt, ui.value);
+        }
+      });
+    }
   }
   
   this.getValue = function(name) {
