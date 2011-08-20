@@ -1,5 +1,5 @@
 //
-//  Fringe.js 0.0.0.2-super-pre-alpha
+//  Fringe.js 0.0.0.3-super-pre-alpha
 //
 //  (c) 2011 Mark Ture <mark.ture@gmail.com>
 //  Fringe may be freely distributed under the MIT license.
@@ -45,12 +45,11 @@ var $fr = {};
       _configMap = {},
       _panel = null,
       _deferredOpts = [],
-      /*_prevKey,*/
       _magicString = 'ff',
       _nextMagicMatch = 0,
       _panelIntendedVisible,
       _fadeTimer,
-      _fadeOpacityIter = 5,  // 0 => opacity: 0, _ANIM_STEPS => opacity: 1.0
+      _fadeOpacityIter = 5,  // 0 => "opacity: 0", _ANIM_STEPS => "opacity: 1.0"
       _ANIM_STEPS = 7,
       _ANIM_DURATION = 90,
       _handleOptionClick, // allow function to be captured in closure for onclick handler
@@ -95,14 +94,6 @@ var $fr = {};
       else {
         _nextMagicMatch = 0;
       }
-      /*
-      if (_prevKey === 70 && char === 82) {
-        _prevKey = null;
-        _fringe.togglePanel();
-      } else {
-        _prevKey = char;
-      }
-      */
     }
   };
   
@@ -233,7 +224,6 @@ var $fr = {};
     } else {
       _fadeTimer = window.setInterval(_fadeOut, _ANIM_DURATION / _ANIM_STEPS);
     }
-    //_panel.style.display = (_panel.style.display === 'none') ? 'block' : 'none';
   }
   
   this.addOption = function(anOpt) {
@@ -262,6 +252,7 @@ var $fr = {};
       btn.innerHTML = anOpt.values[((anOpt.value) ? 1 : 0)];
       btn.onclick = function(event) {
         _handleOptionClick(this, anOpt);
+        this.blur();
         return false;
       };
       contEl.appendChild(btn);
@@ -281,7 +272,7 @@ var $fr = {};
         }
         anEl.onclick = function(event) {
           _handleOptionClick(this, anOpt, this.value);
-          //return false;
+          this.blur();
         };
         contEl.appendChild(anEl);
         
@@ -316,7 +307,7 @@ var $fr = {};
 
     _panel.appendChild(contEl);
 
-    // do any post-append actions that require elements to be attached to DOM
+    // perform any post-append actions that require elements to be attached to DOM
     if (anOpt.type === 'range') {
       $('#FRG__SLIDER__ID__' + anOpt.name).slider({
         value: anOpt.value,
