@@ -1,5 +1,5 @@
 //
-//  Fringe.js 0.1.0-alpha
+//  Fringe.js 0.1.1-alpha
 //
 //  (c) 2011 Mark Ture <mark.ture@gmail.com>
 //  Fringe may be freely distributed under the MIT license.
@@ -111,6 +111,22 @@ var $fr = {};
     }
     head = (node.ownerDocument || document).getElementsByTagName('head')[0];
     head.appendChild(node);
+  }
+  
+  // http://thunderguy.com/semicolon/2005/05/23/setting-the-name-attribute-in-internet-explorer/
+  function _createNamedEl(type, name) {
+    var el = null;
+    // try it IE-style
+    try {
+      el = document.createElement('<'+type+' name="'+name+'">');
+    } catch(err) {}
+    
+    if (!el || el.nodeName != type.toUpperCase()) {
+      // Real browser here; use canonical method to create a named element
+      el = document.createElement(type);
+      el.name = name;
+    }
+    return el;
   }
 
   function _createPanel() {
@@ -261,18 +277,21 @@ var $fr = {};
     }
     else if (anOpt.type === 'multi')
     {
-      formEl = document.createElement('form');
-      formEl.name = 'FRG__FORM__' + anOpt.name;
+      formEl = _createNamedEl('form', 'FRG__FORM__' + anOpt.name);
       formEl.innerHTML = anOpt.name + ':&nbsp;';
       for ( var i=0; i<anOpt.values.length; i++ ) {
         aVal = anOpt.values[i];
-        anEl = document.createElement('input');
+        anEl = _createNamedEl('input', 'FRG__RAD__' + anOpt.name);
         anEl.type = 'radio';
-        anEl.name = 'FRG__RAD__' + anOpt.name;
         anEl.value = aVal;
         anEl.id = 'FRG__RAD__ID__' + aVal;
         if (anOpt.value == aVal) {
           anEl.checked = true;
+          // oh IE, you're so needy - setting 'checked' on a element
+          // unattached to the DOM doesn't work in IE
+          try {
+            anEl.setAttribute('defaultChecked', 'defaultChecked');
+          } catch(err) {}
         }
         anEl.onclick = function(event) {
           _handleOptionClick(this, anOpt, this.value);
