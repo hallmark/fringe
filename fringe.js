@@ -1,5 +1,5 @@
 //
-//  Fringe.js 0.0.0.3-super-pre-alpha
+//  Fringe.js 0.1.0-alpha
 //
 //  (c) 2011 Mark Ture <mark.ture@gmail.com>
 //  Fringe may be freely distributed under the MIT license.
@@ -57,11 +57,11 @@ var $fr = {};
       _defStyles;
   
   _defStyles =
-    '.fringe-panel { font-size: 12px; position: fixed; top: 10px; right: 10px; z-index: 100; background-color: #444; border: 3px solid #222; padding-top: 2px; }' +
+    '.fringe-panel { font-size: 12px; position: fixed; _position: absolute; top: 10px; right: 10px; z-index: 100; background-color: #444; border: 3px solid #222; padding-top: 2px; }' +
     '.fringe-panel a:link,.fringe-panel a:hover,.fringe-panel a:visited { font-size: 12px; color: #DDD; text-decoration: none; }' +
     '.fringe-panel a:hover { text-decoration: underline; }' +
-    '.fringe-panel p { font-size: 12px; margin: 8px 11px; color: #DDD; }' +
-    '.fringe-panel p input { height: 12px; }';
+    '.fringe-panel div.one-opt { font-size: 12px; margin: 8px 11px; color: #DDD; white-space: nowrap; }' +
+    '.fringe-panel div.one-opt input { height: 12px; }';
   
   _handleOptionClick = function(el, opt, newValue) {
     if (opt.type === 'boolean') {
@@ -127,7 +127,7 @@ var $fr = {};
       _panel.style.display = 'none';
       _fadeOpacityIter = 0;
     }
-    // div for min width
+    // div for easily achieving "min width" of panel
     divEl = document.createElement('div');
     divEl.style.width = '170px';
     divEl.style.fontSize = '1px';
@@ -230,7 +230,8 @@ var $fr = {};
     var btn,
         contEl,
         aVal,
-        anEl;
+        anEl,
+        formEl;
     
     if (!anOpt._inited) {
       anOpt['value'] = anOpt.defaultValue;
@@ -242,7 +243,8 @@ var $fr = {};
       return;
     }
     
-    contEl = document.createElement('p');
+    contEl = document.createElement('div');
+    contEl.className = 'one-opt';
     
     if (anOpt.type === 'boolean')
     {
@@ -259,7 +261,9 @@ var $fr = {};
     }
     else if (anOpt.type === 'multi')
     {
-      contEl.innerHTML = anOpt.name + ':&nbsp;';
+      formEl = document.createElement('form');
+      formEl.name = 'FRG__FORM__' + anOpt.name;
+      formEl.innerHTML = anOpt.name + ':&nbsp;';
       for ( var i=0; i<anOpt.values.length; i++ ) {
         aVal = anOpt.values[i];
         anEl = document.createElement('input');
@@ -274,14 +278,15 @@ var $fr = {};
           _handleOptionClick(this, anOpt, this.value);
           this.blur();
         };
-        contEl.appendChild(anEl);
+        formEl.appendChild(anEl);
         
         anEl = document.createElement('label');
         anEl.htmlFor = 'FRG__RAD__ID__' + aVal;
         anEl.innerHTML = aVal;
-        contEl.appendChild(anEl);
-        contEl.appendChild(document.createTextNode(' '));
+        formEl.appendChild(anEl);
+        formEl.appendChild(document.createTextNode(' '));
       }
+      contEl.appendChild(formEl);
     }
     else if (anOpt.type === 'range')
     {
@@ -297,11 +302,13 @@ var $fr = {};
       anEl.id = 'FRG__CURVAL__ID__' + anOpt.name;
       anEl.innerHTML = anOpt.value.toFixed(anOpt.unitDecimals) + anOpt.unitLabel;
       contEl.appendChild(anEl);
-      anEl = document.createElement('div');
+      contEl.appendChild( document.createTextNode('\u00a0\u00a0') );  // add 2 non-breaking spaces
+      anEl = document.createElement('span');
       anEl.id = 'FRG__SLIDER__ID__' + anOpt.name;
       anEl.style.width = '120px';
       anEl.style.display = 'inline-block';
-      anEl.style.marginLeft = '7px';
+      anEl.style.verticalAlign = 'middle';
+      anEl.style.top = "-1px";
       contEl.appendChild(anEl);
     }
 
