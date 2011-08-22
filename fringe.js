@@ -57,7 +57,7 @@ var $fr = {};
       _defStyles;
   
   _defStyles =
-    '.fringe-panel { font-size: 12px; position: fixed; _position: absolute; top: 10px; right: 10px; z-index: 100; background-color: #444; border: 3px solid #222; padding-top: 2px; }' +
+    '.fringe-panel { font-size: 12px; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; position: fixed; _position: absolute; top: 10px; right: 10px; z-index: 100; background-color: #444; border: 3px solid #222; padding-top: 2px; }' +
     '.fringe-panel a:link,.fringe-panel a:hover,.fringe-panel a:visited { font-size: 12px; color: #DDD; text-decoration: none; }' +
     '.fringe-panel a:hover { text-decoration: underline; }' +
     '.fringe-panel div.one-opt { font-size: 12px; margin: 8px 11px; color: #DDD; white-space: nowrap; }' +
