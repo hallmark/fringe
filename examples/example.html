@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Fringe.js example</title>
+  
+  <link rel="stylesheet" href="example.css" type="text/css"/>
+  <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.9/themes/smoothness/jquery-ui.css" type="text/css"/>
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.0/jquery.min.js"></script>
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.9/jquery-ui.min.js"></script>
+  <script type="text/javascript" src="../fringe.js"></script>
+  
+  <script type="text/javascript">
+    var $slider = function()
+    {
+      var _effect = "slide";
+    
+      return {
+        setEffect: function(effect)
+        {
+          _effect = effect;
+        },
+        rotateImages: function(container)
+        {
+          var shownImage = container.find("img").not("img.not-shown");
+          var nextImg = shownImage.next("img");
+          if (nextImg.length == 0)
+          {
+            nextImg = container.find("img:first");
+          }
+
+          if (_effect == "slide")
+          {
+            shownImage.hide("slide", {direction: "left"}, function() { shownImage.addClass("not-shown"); });
+
+            nextImg.show("slide", {direction: "right"}, function() { nextImg.removeClass("not-shown"); });
+          }
+          else if (_effect == "fade")
+          {
+            shownImage.hide("fade", {}, 1200, function() { shownImage.addClass("not-shown"); });
+
+            nextImg.show("fade", {}, 1200, function() { nextImg.removeClass("not-shown"); });
+          }
+        }
+      };
+    }();
+  
+    $(function()
+    {
+      // Rotate images every 4 seconds by default
+      var intervalId = setInterval("$slider.rotateImages($('#sliderBox'))", 4000);
+    
+      //
+      // BEGIN Fringe.js
+      //
+      $fr.initialize({
+        visible: false
+      });
+    
+      $fr.addOption({
+        name: 'Carousel',
+        defaultValue: 'slide',
+        type: 'multi',
+        values: ['slide', 'fade'],
+        onActivate: function(value) {
+          $slider.setEffect(value);
+        }
+      });
+      $fr.addOption({
+        name: 'Interval',
+        defaultValue: 4,
+        type: 'range',
+        unitLabel: 's', // seconds
+        unitDecimals: 1,
+        min: 2,
+        max: 10,
+        step: 0.5,
+        onActivate: function(value) {
+          window.clearInterval(intervalId);
+          intervalId = setInterval("$slider.rotateImages($('#sliderBox'))", value*1000);
+        }
+      });
+    
+      $fr.render();
+      //
+      // END Fringe.js
+      //
+    
+    });
+
+  </script>
+</head>
+<body id="">
+  <h1>Fringe.js example</h1>
+  
+  <p>Type "ff" to start playing around with the photo slider effect.</p>
+  
+  <div id="centeredBox">
+    <div id="sliderBox">
+      <img alt="cow" src="img/201338182_32edccd243.jpg" class="rotate">
+      <img alt="cow" src="img/2194435905_e3bc46312f.jpg" class="rotate not-shown">
+      <img alt="cow" src="img/2825061412_3d18b30c6f.jpg" class="rotate not-shown">
+      <img alt="cow" src="img/3160390295_57ab9478dd.jpg" class="rotate not-shown">
+      <img alt="cow" src="img/4067897876_664a99538c.jpg" class="rotate not-shown">
+    </div>
+  </div>
+
+  <p class="attribution">Creative Commons images from
+    <a href="http://www.flickr.com/photos/freefoto/2194435905/">here</a>,
+    <a href="http://www.flickr.com/photos/anna-b/3160390295/">here</a>,
+    <a href="http://www.flickr.com/photos/apollinaire/201338182/">here</a>,
+    <a href="http://www.flickr.com/photos/macieklew/2825061412/">here</a>, and
+    <a href="http://www.flickr.com/photos/simon_aughton/4067897876/">here</a>.
+  </p>
+
+</body>
+</html>

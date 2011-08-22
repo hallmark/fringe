@@ -1,0 +1,41 @@
+body {
+  background-color: #D3DDDA;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+#centeredBox {
+  margin: 100px auto;
+  width: 514px;
+  height: 389px;
+  position: relative;
+}
+#sliderBox {
+  position: alsolute;
+  width: 500px;
+  height: 375px;
+  background-color: white;
+  padding: 4px;
+  border: 3px solid #ccc;
+}
+#sliderBox img {
+  width: 500px;
+  height: 375px;
+}
+#sliderBox img.rotate {
+  display: block;
+  position: absolute;
+  top: 7px;
+  left: 7px;
+}
+#sliderBox img.not-shown {
+  display: none;
+}
+.attribution {
+  color: #888;
+  font-size: 89%;
+}
+.attribution a {
+  color: #888;
+}
+.attribution a:hover {
+  color: #555;
+}
